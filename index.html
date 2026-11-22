@@ -1332,9 +1332,9 @@
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
   // KONFIGURASI APLIKASI
-  const IS_PREVIEW = false; // Ubah menjadi false SAAT DEPLOY agar mode preview & data dummy hilang dan terhubung 100% ke Supabase
-  const SUPABASE_URL ="https://ciieigjvazkdmbdjhsrg.supabase.co";
-  const SUPABASE_ANON_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpaWVpZ2p2YXprZG1iZGpoc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNjAxOTksImV4cCI6MjExMDkzNjE5OX0.H6ebTDGiU2KM5sYdiveWwXncblRo6OPNnbbQO27oH2k";
+  const IS_PREVIEW = true; // Ubah menjadi false SAAT DEPLOY agar mode preview & data dummy hilang dan terhubung 100% ke Supabase
+  const SUPABASE_URL = "https://ciieigjvazkdmbdjhsrg.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpaWVpZ2p2YXprZG1iZGpoc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNjAxOTksImV4cCI6MjExMDkzNjE5OX0.H6ebTDGiU2KM5sYdiveWwXncblRo6OPNnbbQO27oH2k";
   const supabase = (!IS_PREVIEW && SUPABASE_URL.startsWith('http'))
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
