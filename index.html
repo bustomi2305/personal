@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d9488" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>LifeOS — Personal Operating System (Supabase)</title>
+
+  <!-- PWA MANIFEST VIA DATA URI -->
+  <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"LifeOS Personal Operating System","short_name":"LifeOS","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#0d9488","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2724%27 fill=%27%230d9488%27/><circle cx=%2750%27 cy=%2750%27 r=%2728%27 fill=%27none%27 stroke=%27white%27 stroke-width=%276%27/><polygon points=%2750,26 58,50 50,74 42,50%27 fill=%27white%27/></svg>","sizes":"512x512","type":"image/svg+xml"}]}' />
+
+  <!-- FONTS & CHART.JS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-soft: rgba(13, 148, 136, 0.12);
+      --accent: #2563eb;
+      --danger: #e11d48;
+      --warning: #d97706;
+      --success: #059669;
+      --bg-base: #f4f7fb;
+      --glass-bg: rgba(255, 255, 255, 0.78);
+      --glass-strong: rgba(255, 255, 255, 0.92);
+      --glass-border: rgba(255, 255, 255, 0.65);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-glass: 0 10px 30px -10px rgba(15, 23, 42, 0.08);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --sidebar-w: 260px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* FULL PAGE OVERLAY MENUTUPI ELEMEN BLOGGER TANPA EDIT XML */
+    #lifeos-root {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(13, 148, 136, 0.14), transparent 38%),
+        radial-gradient(circle at 90% 15%, rgba(37, 99, 235, 0.11), transparent 40%),
+        radial-gradient(circle at 50% 95%, rgba(16, 185, 129, 0.10), transparent 45%),
+        var(--bg-base);
+      color: var(--text-main);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+    }
+
+    .glass-card {
+      background: var(--glass-strong);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+      padding: 18px;
+    }
+
+    /* PREVIEW BANNER */
+    #preview-banner {
+      background: linear-gradient(90deg, #0f766e, #0284c7);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    /* PWA INSTALL BANNER */
+    #pwa-install-banner {
+      display: none;
+      background: #0f172a;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 12.5px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    /* LOGIN VIEW */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      padding: 28px;
+      border-radius: 24px;
+    }
+    .role-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(226, 232, 240, 0.6);
+      padding: 4px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+    .role-btn {
+      border: none;
+      background: transparent;
+      padding: 9px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .role-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* APP SHELL RESPONSIVE (DESKTOP SIDEBAR vs MOBILE BOTTOM NAV) */
+    #app-shell {
+      display: none;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
+      border-right: 1px solid rgba(226, 232, 240, 0.9);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      flex-shrink: 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 14px;
+      border-radius: 13px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 4px;
+      transition: 0.2s;
+    }
+    .nav-item:hover { background: var(--primary-soft); color: var(--primary-dark); }
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--primary), #0f766e);
+      color: #fff;
+      box-shadow: 0 6px 16px -4px rgba(13, 148, 136, 0.45);
+    }
+
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .topbar {
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+    }
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 22px 96px;
+    }
+
+    /* BOTTOM NAV FOR MOBILE */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      border-radius: 20px;
+      padding: 6px 4px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+      justify-content: space-around;
+    }
+    .bnav-btn {
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding: 6px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .bnav-btn.active { color: var(--primary); background: var(--primary-soft); }
+
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .bottom-nav { display: flex; }
+      .content-scroll { padding: 14px 14px 96px; }
+      .topbar { padding: 12px 14px; }
+    }
+
+    /* COMMON UI COMPONENTS */
+    .tab-pane { display: none; animation: fadeIn 0.22s ease; }
+    .tab-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; }
+
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .kpi-val { font-size: 21px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; }
+    .kpi-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+    .input, .select, .textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 11px;
+      border: 1px solid #cbd5e1;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 13.5px;
+      color: var(--text-main);
+      outline: none;
+      transition: 0.15s;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.18s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-outline { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; }
+    .btn-danger { background: #ffe4e6; color: var(--danger); }
+    .btn-sm { padding: 6px 10px; font-size: 11.5px; border-radius: 9px; }
+
+    .sub-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; }
+    .pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: rgba(255,255,255,0.8);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-red { background: #ffe4e6; color: #9f1239; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+
+    .list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 9px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #10b981);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000000;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 82px;
+      right: 20px;
+      z-index: 1000001;
+      background: #0f172a;
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+<div id="lifeos-root">
+  <!-- PREVIEW MODE BANNER (HILANG OTOMATIS SAAT IS_PREVIEW = false) -->
+  <div id="preview-banner">
+    <span>⚡ MODE PREVIEW AKTIF — Data disimpan sementara di memori browser.</span>
+    <span style="opacity:0.9;">Ubah <code>IS_PREVIEW = false</code> saat deploy produksi.</span>
+  </div>
+
+  <!-- PWA INSTALL PROMPT -->
+  <div id="pwa-install-banner">
+    <span>📲 Pasang <strong>LifeOS</strong> ke Home Screen untuk akses cepat seperti aplikasi native.</span>
+    <div style="display:flex;gap:6px;">
+      <button id="btn-install-pwa" class="btn btn-primary btn-sm">Install App</button>
+      <button onclick="document.getElementById('pwa-install-banner').style.display='none'" class="btn btn-secondary btn-sm">Nanti</button>
+    </div>
+  </div>
+
+  <!-- ==================== LOGIN SCREEN ==================== -->
+  <div id="login-screen">
+    <div class="glass login-box">
+      <div style="text-align:center;">
+        <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#0d9488,#0284c7);color:#fff;font-size:26px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;">🧭</div>
+        <h1 style="font-size:22px;font-weight:800;">LifeOS Supabase</h1>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Personal Finance, Net Worth, S2, Fitness & Growth</p>
+      </div>
+
+      <div class="role-switch">
+        <button type="button" id="role-admin-btn" class="role-btn active" onclick="setLoginMode('admin')">🔐 Admin (Supabase Auth)</button>
+        <button type="button" id="role-user-btn" class="role-btn" onclick="setLoginMode('user')">👤 User / Partner (DB)</button>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" id="login-id-label">Email Admin</label>
+          <input type="text" id="login-identifier" class="input" placeholder="admin@lifeos.app" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="input" placeholder="••••••••" required />
+        </div>
+        <div id="login-error" style="display:none;color:var(--danger);font-size:12.5px;font-weight:600;margin-bottom:10px;"></div>
+        <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width:100%;padding:12px;">Masuk ke LifeOS</button>
+      </form>
+
+      <!-- QUICK PREVIEW LOGIN (HILANG OTOMATIS SAAT IS_PREVIEW = false) -->
+      <div id="preview-login-box" style="margin-top:16px;padding-top:14px;border-top:1px dashed #cbd5e1;">
+        <p style="font-size:11.5px;font-weight:700;color:var(--text-muted);text-align:center;margin-bottom:8px;">PINTASAN UJI COBA (MODE PREVIEW)</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" onclick="quickPreviewLogin('admin')" class="btn btn-outline btn-sm">⚡ Masuk Admin</button>
+          <button type="button" onclick="quickPreviewLogin('user')" class="btn btn-outline btn-sm">⚡ Masuk User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP SHELL ==================== -->
+  <div id="app-shell">
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 18px;">
+        <div style="width:38px;height:38px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;">🧭</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;">LifeOS</div>
+          <div style="font-size:11px;color:var(--text-muted);" id="sidebar-user-badge">Supabase Cloud</div>
+        </div>
+      </div>
+
+      <nav style="flex:1;overflow-y:auto;">
+        <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="nav-item" data-tab="finance" onclick="switchTab('finance')">💸 Arus Kas & Kantong</button>
+        <button class="nav-item" data-tab="networth" onclick="switchTab('networth')">🏦 Neraca: Aset & Hutang</button>
+        <button class="nav-item" data-tab="growth" onclick="switchTab('growth')">🚀 Goals, S2 & Fitness</button>
+        <button class="nav-item" data-tab="schedule" onclick="switchTab('schedule')">📅 Jadwal & To-Do</button>
+        <button class="nav-item" data-tab="journal" onclick="switchTab('journal')">🧠 Mood & Jurnal</button>
+      </nav>
+
+      <div style="padding-top:12px;border-top:1px solid #e2e8f0;">
+        <button onclick="handleLogout()" class="btn btn-danger" style="width:100%;">🚪 Keluar</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-area">
+      <header class="topbar">
+        <div>
+          <h2 id="page-title" style="font-size:17px;font-weight:800;">Dashboard Ringkasan</h2>
+          <p id="page-subtitle" style="font-size:12px;color:var(--text-muted);">Pantau kekayaan bersih, progres S2, diet & kebiasaan harian</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="refreshAllData()" class="btn btn-outline btn-sm" title="Sinkronkan Data">🔄 Sync</button>
+          <button onclick="handleLogout()" class="btn btn-danger btn-sm">Keluar</button>
+        </div>
+      </header>
+
+      <main class="content-scroll">
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <div class="grid-4" style="margin-bottom:16px;">
+            <div class="glass-card">
+              <div class="kpi-label">💎 True Net Worth (Aset + Kas − Hutang)</div>
+              <div class="kpi-val" id="dash-networth" style="color:var(--primary);">Rp 0</div>
+              <div class="kpi-sub" id="dash-networth-sub">Aset & Kas: Rp 0 | Hutang: Rp 0</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">💰 Net Cashflow Bulan Ini</div>
+              <div class="kpi-val" id="dash-cashflow">Rp 0</div>
+              <div class="kpi-sub" id="dash-cashflow-sub">Masuk: Rp 0 | Keluar: Rp 0</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">🔥 Habit & Target Kalori Hari Ini</div>
+              <div class="kpi-val" id="dash-habit-cal">0% • 0 kkal</div>
+              <div class="kpi-sub" id="dash-habit-sub">Kebiasaan selesai & asupan kalori</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">🎓 Beasiswa S2 & Berat Badan</div>
+              <div class="kpi-val" id="dash-s2-weight">0 Target • - kg</div>
+              <div class="kpi-sub" id="dash-s2-sub">Progres studi & komposisi tubuh</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-card">
+              <h3 style="font-size:14.5px;font-weight:800;margin-bottom:10px;">📈 Arus Kas & Komposisi Kekayaan</h3>
+              <div style="height:230px;"><canvas id="chart-dash-finance"></canvas></div>
+            </div>
+            <div class="glass-card">
+              <h3 style="font-size:14.5px;font-weight:800;margin-bottom:10px;">⚖️ Tren Berat Badan & Konsistensi</h3>
+              <div style="height:230px;"><canvas id="chart-dash-body"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2: ARUS KAS & KANTONG DANA ==================== -->
+        <section id="tab-finance" class="tab-pane">
+          <!-- KANTONG DANA / REKENING / CASH -->
+          <div class="glass-card" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+              <div>
+                <h3 style="font-size:15px;font-weight:800;">👛 Kantong Dana, Rekening & Cash</h3>
+                <p style="font-size:12px;color:var(--text-muted);">Pisahkan saldo Tunai, Bank, E-Wallet, dan Tabungan S2. Gunakan <b>Sesuaikan</b> untuk Cash Opname.</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button onclick="openModal('modal-kantong')" class="btn btn-primary btn-sm">+ Kantong</button>
+                <button onclick="openModal('modal-transfer')" class="btn btn-outline btn-sm">🔁 Transfer</button>
+              </div>
+            </div>
+            <div id="kantong-list" class="grid-4"></div>
+          </div>
+
+          <div class="grid-2">
+            <!-- FORM INPUT TRANSAKSI -->
+            <div class="glass-card">
+              <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">➕ Catat Pemasukan / Pengeluaran</h3>
+              <form onsubmit="saveKeuangan(event)">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Tipe</label>
+                    <select id="fin-tipe" class="select">
+                      <option value="Pengeluaran">Pengeluaran (-)</option>
+                      <option value="Pemasukan">Pemasukan (+)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" id="fin-tanggal" class="input" required />
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Kantong Dana</label>
+                    <select id="fin-kantong" class="select" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <select id="fin-kategori" class="select">
+                      <option>Makan & Minum</option>
+                      <option>Transportasi</option>
+                      <option>Belanja & Kebutuhan</option>
+                      <option>Tagihan & Utilitas</option>
+                      <option>Pendidikan & S2</option>
+                      <option>Kesehatan & Olahraga</option>
+                      <option>Cicilan Hutang</option>
+                      <option>Gaji & Tunjangan</option>
+                      <option>Dividen / Investasi</option>
+                      <option>Lainnya</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nominal (Rp)</label>
+                  <input type="number" id="fin-nominal" class="input" placeholder="50000" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Catatan</label>
+                  <input type="text" id="fin-catatan" class="input" placeholder="Contoh: Makan siang ayam dada + kopi" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Upload Struk / Bukti TF (Opsional)</label>
+                  <input type="file" id="fin-file" class="input" accept="image/*,application/pdf" />
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Transaksi</button>
+              </form>
+            </div>
+
+            <!-- FILTER, SEARCH, LAPORAN & RIWAYAT -->
+            <div class="glass-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                <h3 style="font-size:15px;font-weight:800;">📑 Riwayat & Laporan Keuangan</h3>
+                <div style="display:flex;gap:6px;">
+                  <button onclick="exportFinanceCSV()" class="btn btn-outline btn-sm">📥 CSV</button>
+                  <button onclick="printFinancePDF()" class="btn btn-primary btn-sm">🖨️ Laporan PDF</button>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <input type="text" id="fin-search" class="input" placeholder="🔍 Cari catatan/kategori..." oninput="renderFinanceList()" />
+                <select id="fin-period-mode" class="select" onchange="togglePeriodInputs()">
+                  <option value="all">Semua Periode</option>
+                  <option value="range">Rentang Tanggal</option>
+                  <option value="quarter">Per Kuartal (Q1-Q4)</option>
+                  <option value="semester">Per Semester (S1-S2)</option>
+                  <option value="year">Per Tahun</option>
+                </select>
+              </div>
+
+              <div id="fin-period-extra" style="display:none;gap:8px;margin-bottom:10px;flex-wrap:wrap;"></div>
+
+              <div id="finance-summary-bar" style="padding:10px;border-radius:12px;background:var(--primary-soft);font-size:12px;font-weight:700;margin-bottom:10px;"></div>
+              <div id="finance-list" style="max-height:360px;overflow-y:auto;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 3: NERACA (ASET & HUTANG) ==================== -->
+        <section id="tab-networth" class="tab-pane">
+          <div class="grid-4" style="margin-bottom:16px;">
+            <div class="glass-card">
+              <div class="kpi-label">📈 Total Nilai Portofolio Aset</div>
+              <div class="kpi-val" id="nw-total-aset" style="color:var(--success);">Rp 0</div>
+              <div class="kpi-sub" id="nw-aset-pnl">Modal: Rp 0 (PnL: 0%)</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">💳 Total Outstanding Hutang</div>
+              <div class="kpi-val" id="nw-total-hutang" style="color:var(--danger);">Rp 0</div>
+              <div class="kpi-sub" id="nw-cicilan-bulanan">Cicilan wajib: Rp 0/bln</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">💎 True Net Worth (Termasuk Kas)</div>
+              <div class="kpi-val" id="nw-true-networth" style="color:var(--primary);">Rp 0</div>
+              <div class="kpi-sub">Aset + Saldo Kantong − Hutang</div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-label">⚖️ Debt-to-Asset Ratio</div>
+              <div class="kpi-val" id="nw-debt-ratio">0%</div>
+              <div class="kpi-sub">Idealnya di bawah 35%</div>
+            </div>
+          </div>
+
+          <div class="sub-pills">
+            <button class="pill active" onclick="switchSubTab('nw','aset',this)">📊 Portofolio Investasi & Aset</button>
+            <button class="pill" onclick="switchSubTab('nw','hutang',this)">🧾 Tracking Hutang & Payoff Planner</button>
+          </div>
+
+          <!-- SUB: PORTOFOLIO ASET -->
+          <div id="nw-aset" class="nw-sub">
+            <div class="grid-2">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">➕ Tambah / Update Aset Investasi</h3>
+                <form onsubmit="saveAset(event)">
+                  <div class="form-group">
+                    <label class="form-label">Nama Instrumen / Aset</label>
+                    <input type="text" id="aset-nama" class="input" placeholder="Contoh: Saham BMRI / SBN ORI025 / Emas Antam" required />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Kategori Aset</label>
+                      <select id="aset-kategori" class="select">
+                        <option>Saham</option>
+                        <option>SBN / Obligasi</option>
+                        <option>Reksadana</option>
+                        <option>Tabungan / Deposito</option>
+                        <option>Emas</option>
+                        <option>Crypto</option>
+                        <option>Properti / Lainnya</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Platform / Sekuritas</label>
+                      <input type="text" id="aset-platform" class="input" placeholder="Stockbit / Bibit / Mandiri" />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Modal Pokok (Rp)</label>
+                      <input type="number" id="aset-modal" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Nilai Pasar Saat Ini (Rp)</label>
+                      <input type="number" id="aset-nilai" class="input" required />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Aset</button>
+                </form>
+              </div>
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">💼 Daftar Portofolio</h3>
+                <div id="aset-list" style="max-height:360px;overflow-y:auto;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB: HUTANG & PAYOFF PLANNER -->
+          <div id="nw-hutang" class="nw-sub" style="display:none;">
+            <div class="grid-2" style="margin-bottom:16px;">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">➕ Catat Kewajiban / Hutang</h3>
+                <form onsubmit="saveHutang(event)">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Jenis Hutang</label>
+                      <select id="debt-jenis" class="select">
+                        <option>KPR</option>
+                        <option>Kartu Kredit</option>
+                        <option>KTA (Kredit Tanpa Agunan)</option>
+                        <option>Kredit Kendaraan</option>
+                        <option>Pinjaman Produktif</option>
+                        <option>Paylater</option>
+                        <option>Pinjaman Pribadi</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Bank / Kreditur</label>
+                      <input type="text" id="debt-kreditur" class="input" placeholder="Bank Mandiri / BCA" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Nama Fasilitas Hutang</label>
+                    <input type="text" id="debt-nama" class="input" placeholder="Contoh: KPR Rumah Pamekasan" required />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Plafon / Limit Awal (Rp)</label>
+                      <input type="number" id="debt-plafon" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Outstanding Saat Ini (Rp)</label>
+                      <input type="number" id="debt-outstanding" class="input" required />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label class="form-label">Tenor Total (Bln)</label>
+                      <input type="number" id="debt-tenor-total" class="input" value="12" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Sisa Tenor (Bln)</label>
+                      <input type="number" id="debt-sisa-tenor" class="input" value="10" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Bunga/Thn (%)</label>
+                      <input type="number" step="0.1" id="debt-bunga" class="input" value="6.5" required />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Cicilan Wajib/Bln (Rp)</label>
+                      <input type="number" id="debt-cicilan" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Tgl Jatuh Tempo</label>
+                      <input type="number" min="1" max="31" id="debt-jatuh-tempo" class="input" value="15" />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Data Hutang</button>
+                </form>
+              </div>
+
+              <!-- SIMULATOR PAYOFF PLANNER -->
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:8px;">🎯 Debt Payoff Planner (Avalanche vs Snowball)</h3>
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Simulasikan percepatan pelunasan hutang dengan dana ekstra bulanan.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                  <div>
+                    <label class="form-label">Metode Strategi</label>
+                    <select id="payoff-method" class="select" onchange="renderPayoffPlanner()">
+                      <option value="avalanche">Avalanche (Bunga Tertinggi Dulu)</option>
+                      <option value="snowball">Snowball (Sisa Terkecil Dulu)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Dana Ekstra / Bulan (Rp)</label>
+                    <input type="number" id="payoff-extra" class="input" value="1000000" oninput="renderPayoffPlanner()" />
+                  </div>
+                </div>
+                <div id="payoff-plan-result" style="margin-bottom:14px;"></div>
+                <h4 style="font-size:13.5px;font-weight:800;margin-bottom:8px;">📋 Daftar Kewajiban Aktif</h4>
+                <div id="hutang-list" style="max-height:240px;overflow-y:auto;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 4: GOALS, S2 & FITNESS ==================== -->
+        <section id="tab-growth" class="tab-pane">
+          <div class="sub-pills">
+            <button class="pill active" onclick="switchSubTab('gr','habits',this)">🔥 Daily Habits</button>
+            <button class="pill" onclick="switchSubTab('gr','goals',this)">🎯 Life Goals (OKR)</button>
+            <button class="pill" onclick="switchSubTab('gr','s2',this)">🎓 Studi S2 & Beasiswa</button>
+            <button class="pill" onclick="switchSubTab('gr','fitness',this)">💪 Fitness, Diet & Body</button>
+            <button class="pill" onclick="switchSubTab('gr','bucket',this)">🌍 Bucket & Reading List</button>
+          </div>
+
+          <!-- SUB 4A: HABITS -->
+          <div id="gr-habits" class="gr-sub">
+            <div class="grid-2">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">➕ Tambah Kebiasaan Harian</h3>
+                <form onsubmit="saveHabit(event)">
+                  <div class="form-group">
+                    <label class="form-label">Nama Habit</label>
+                    <input type="text" id="hab-nama" class="input" placeholder="Contoh: Belajar IELTS 45 Menit / Defisit Kalori" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <select id="hab-kategori" class="select">
+                      <option>Kesehatan & Diet</option>
+                      <option>Akademik & S2</option>
+                      <option>Karier & Keuangan</option>
+                      <option>Mindfulness & Ibadah</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Tambah Habit</button>
+                </form>
+              </div>
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">✅ Checklist Habit Hari Ini</h3>
+                <div id="habit-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB 4B: LIFE GOALS -->
+          <div id="gr-goals" class="gr-sub" style="display:none;">
+            <div class="grid-2">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">🎯 Buat Target / OKR Baru</h3>
+                <form onsubmit="saveGoal(event)">
+                  <div class="form-group">
+                    <label class="form-label">Judul Goal</label>
+                    <input type="text" id="goal-judul" class="input" placeholder="Contoh: Skor IELTS Overall 7.0 / Dana Darurat 100 Juta" required />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Target Angka</label>
+                      <input type="number" step="0.1" id="goal-target" class="input" value="100" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Progres Saat Ini</label>
+                      <input type="number" step="0.1" id="goal-progres" class="input" value="25" required />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Satuan</label>
+                      <input type="text" id="goal-satuan" class="input" placeholder="%, Band, Juta, Buku" value="%" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Deadline</label>
+                      <input type="date" id="goal-deadline" class="input" />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Goal</button>
+                </form>
+              </div>
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">🚀 Progres Life Goals</h3>
+                <div id="goals-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB 4C: STUDI S2 & BEASISWA -->
+          <div id="gr-s2" class="gr-sub" style="display:none;">
+            <div class="grid-2">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">🎓 Tambah Target Beasiswa / Kampus S2</h3>
+                <form onsubmit="saveS2(event)">
+                  <div class="form-group">
+                    <label class="form-label">Nama Beasiswa</label>
+                    <input type="text" id="s2-beasiswa" class="input" placeholder="Contoh: LPDP Reguler / Chevening / AAS / MEXT" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Universitas & Negara Tujuan</label>
+                    <input type="text" id="s2-kampus" class="input" placeholder="Contoh: University of Melbourne / UCL / UGM" required />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Deadline Pendaftaran</label>
+                      <input type="date" id="s2-deadline" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Status Saat Ini</label>
+                      <select id="s2-status" class="select">
+                        <option>Riset & Persiapan</option>
+                        <option>Persiapan IELTS/LoA</option>
+                        <option>Penyusunan Essay</option>
+                        <option>Submitted</option>
+                        <option>Seleksi Wawancara</option>
+                        <option>LoA / Awarded</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Kelengkapan Berkas & Target Skor</label>
+                    <input type="text" id="s2-berkas" class="input" placeholder="IELTS 6.5 (Done), Essay (70%), Rekomendasi (Pending)" />
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Target S2</button>
+                </form>
+              </div>
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">🏛️ Roadmap Aplikasi Beasiswa & S2</h3>
+                <div id="s2-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB 4D: FITNESS, DIET & BODY COMPOSITION -->
+          <div id="gr-fitness" class="gr-sub" style="display:none;">
+            <!-- ROW 1: BODY COMPOSITION + CHART -->
+            <div class="grid-2" style="margin-bottom:16px;">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">⚖️ Catat Komposisi Tubuh & Foto Progres</h3>
+                <form onsubmit="saveBodyMetric(event)">
+                  <input type="hidden" id="body-edit-id" />
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Tanggal</label>
+                      <input type="date" id="body-tanggal" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Berat Badan (kg)</label>
+                      <input type="number" step="0.1" id="body-berat" class="input" placeholder="68.5" required />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label class="form-label">Body Fat (%)</label>
+                      <input type="number" step="0.1" id="body-fat" class="input" placeholder="18.5" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Massa Otot (kg)</label>
+                      <input type="number" step="0.1" id="body-muscle" class="input" placeholder="52.0" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Massa Air (%)</label>
+                      <input type="number" step="0.1" id="body-water" class="input" placeholder="58.0" />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label class="form-label">📸 Foto Depan</label>
+                      <input type="file" id="body-foto-depan" class="input" accept="image/*" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">📸 Foto Samping</label>
+                      <input type="file" id="body-foto-samping" class="input" accept="image/*" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">📸 Foto Belakang</label>
+                      <input type="file" id="body-foto-belakang" class="input" accept="image/*" />
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button type="submit" id="btn-save-body" class="btn btn-primary" style="flex:1;">Simpan Data Timbangan</button>
+                    <button type="button" id="btn-cancel-body" onclick="resetBodyForm()" class="btn btn-secondary" style="display:none;">Batal</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:8px;">📉 Visualisasi Progres Komposisi Tubuh</h3>
+                <div style="height:210px;margin-bottom:10px;"><canvas id="chart-body-progress"></canvas></div>
+                <div id="body-list" style="max-height:170px;overflow-y:auto;"></div>
+              </div>
+            </div>
+
+            <!-- ROW 2: SMART FOOD & CALORIE LOG (DIRECT GEMINI) + WORKOUT -->
+            <div class="grid-2">
+              <div class="glass-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h3 style="font-size:15px;font-weight:800;">🥗 Food & Calorie Log (Direct Gemini)</h3>
+                  <button onclick="openModal('modal-cal-target')" class="btn btn-outline btn-sm">🎯 Set Target</button>
+                </div>
+
+                <!-- PROGRESS TARGET KALORI HARIAN -->
+                <div style="padding:12px;border-radius:14px;background:var(--primary-soft);margin-bottom:12px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;margin-bottom:6px;">
+                    <span id="cal-today-label">Kalori Hari Ini: 0 / 1.350 kkal</span>
+                    <span id="prot-today-label">Protein: 0 / 110 gr</span>
+                  </div>
+                  <div class="progress-bar"><div id="cal-progress-fill" class="progress-fill" style="width:0%;"></div></div>
+                </div>
+
+                <!-- GEMINI DIRECT COPY-PASTE HELPER -->
+                <div style="padding:10px;border:1px dashed var(--primary);border-radius:12px;margin-bottom:12px;background:#fff;">
+                  <label class="form-label">Ketik Makanan & Gramasi (Tanpa API Token)</label>
+                  <div style="display:flex;gap:6px;margin-bottom:8px;">
+                    <input type="text" id="food-raw-prompt" class="input" placeholder="Contoh: Dada ayam airfryer 150gr, nasi shirataki 40gr, telur rebus 1 butir" />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <button type="button" onclick="copyPromptOpenGemini()" class="btn btn-primary btn-sm">✨ Hitung di Gemini</button>
+                    <button type="button" onclick="pasteFromGemini()" class="btn btn-outline btn-sm">📋 Paste Hasil Gemini</button>
+                  </div>
+                </div>
+
+                <form onsubmit="saveFoodLog(event)">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label class="form-label">Waktu Makan</label>
+                      <select id="food-waktu" class="select">
+                        <option>Sarapan</option>
+                        <option>Makan Siang</option>
+                        <option>Makan Malam</option>
+                        <option>Snack / Pre-Workout</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Tanggal</label>
+                      <input type="date" id="food-tanggal" class="input" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Menu Makanan</label>
+                    <input type="text" id="food-nama" class="input" placeholder="Nama menu makanan" required />
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="form-group">
+                      <label class="form-label">Kalori (kkal)</label>
+                      <input type="number" id="food-kalori" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Protein (gram)</label>
+                      <input type="number" step="0.1" id="food-protein" class="input" value="0" />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Catat Asupan Makanan</button>
+                </form>
+
+                <div style="height:170px;margin-top:14px;"><canvas id="chart-calorie-7d"></canvas></div>
+                <div id="food-list" style="max-height:180px;overflow-y:auto;margin-top:10px;"></div>
+              </div>
+
+              <!-- WORKOUT & STRAVA LOG -->
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">🏃 Jadwal & Log Olahraga (Strava / Smartwatch)</h3>
+                <form onsubmit="saveWorkout(event)">
+                  <input type="hidden" id="wo-edit-id" />
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Tanggal</label>
+                      <input type="date" id="wo-tanggal" class="input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Jenis Olahraga</label>
+                      <input type="text" id="wo-jenis" class="input" placeholder="Lari 5K / Strength Training / HIIT" required />
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Durasi (Menit)</label>
+                      <input type="number" id="wo-durasi" class="input" value="45" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Kalori Terbakar (kkal)</label>
+                      <input type="number" id="wo-kalori" class="input" value="320" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">🔗 Link Strava / Record Smartwatch (Opsional)</label>
+                    <input type="url" id="wo-link" class="input" placeholder="https://www.strava.com/activities/..." />
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button type="submit" id="btn-save-wo" class="btn btn-primary" style="flex:1;">Simpan Log Olahraga</button>
+                    <button type="button" id="btn-cancel-wo" onclick="resetWorkoutForm()" class="btn btn-secondary" style="display:none;">Batal</button>
+                  </div>
+                </form>
+
+                <div id="workout-list" style="max-height:340px;overflow-y:auto;margin-top:14px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB 4E: BUCKET & READING LIST -->
+          <div id="gr-bucket" class="gr-sub" style="display:none;">
+            <div class="grid-2">
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">✨ Tambah Bucket List / Reading List</h3>
+                <form onsubmit="saveGrowthItem(event)">
+                  <div class="form-group">
+                    <label class="form-label">Tipe</label>
+                    <select id="gi-tipe" class="select">
+                      <option value="BucketList">🌍 Bucket List (Impian / Pengalaman)</option>
+                      <option value="ReadingList">📚 Reading & Learning List</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Judul / Impian</label>
+                    <input type="text" id="gi-judul" class="input" placeholder="Contoh: Lari World Marathon Majors / Atomic Habits" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Penulis / Lokasi / Catatan Singkat</label>
+                    <input type="text" id="gi-sub" class="input" placeholder="James Clear / Tokyo" />
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Item</button>
+                </form>
+              </div>
+              <div class="glass-card">
+                <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">📌 Daftar Impian & Bacaan</h3>
+                <div id="growth-items-list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 5: JADWAL & TO-DO ==================== -->
+        <section id="tab-schedule" class="tab-pane">
+          <div class="grid-2">
+            <div class="glass-card">
+              <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">📝 Tambah To-Do & Agenda (Sync Google Calendar)</h3>
+              <form onsubmit="saveTodo(event)">
+                <div class="form-group">
+                  <label class="form-label">Judul Tugas / Agenda</label>
+                  <input type="text" id="todo-judul" class="input" placeholder="Contoh: Simulasi Listening IELTS / Review Anggaran" required />
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" id="todo-tanggal" class="input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Jam Mulai</label>
+                    <input type="time" id="todo-waktu" class="input" value="08:00" />
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Prioritas Eisenhower</label>
+                    <select id="todo-prioritas" class="select">
+                      <option>Penting & Mendesak</option>
+                      <option>Penting (Jadwalkan)</option>
+                      <option>Delegasikan</option>
+                      <option>Santai / Opsional</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Durasi (Menit)</label>
+                    <input type="number" id="todo-durasi" class="input" value="60" />
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Tugas</button>
+              </form>
+            </div>
+
+            <div class="glass-card">
+              <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">📅 Daftar Tugas & Integrasi Google Calendar</h3>
+              <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Klik tombol <b>📅 GCal</b> pada tugas mana pun untuk langsung menambahkannya ke Google Calendar kamu.</p>
+              <div id="todo-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 6: MOOD & JURNAL ==================== -->
+        <section id="tab-journal" class="tab-pane">
+          <div class="grid-2">
+            <div class="glass-card">
+              <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">🧠 Daily Mood Check-In & Refleksi</h3>
+              <form onsubmit="saveJournal(event)">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group">
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" id="jrn-tanggal" class="input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Skor Mood (1 - 5)</label>
+                    <select id="jrn-mood" class="select">
+                      <option value="5">5 — 😄 Luar Biasa</option>
+                      <option value="4" selected>4 — 🙂 Baik & Produktif</option>
+                      <option value="3">3 — 😐 Netral / Biasa</option>
+                      <option value="2">2 — 😔 Kurang Berenergi</option>
+                      <option value="1">1 — 😫 Stres / Berat</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Judul Refleksi</label>
+                  <input type="text" id="jrn-judul" class="input" placeholder="Highlight utama hari ini..." required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Catatan Jurnal</label>
+                  <textarea id="jrn-isi" class="textarea" rows="3" placeholder="Apa yang berjalan baik hari ini dan apa yang bisa ditingkatkan besok?"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">🙏 3 Hal yang Disyukuri (Gratitude)</label>
+                  <input type="text" id="jrn-gratitude" class="input" placeholder="Kesehatan, progres belajar S2, keluarga..." />
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Simpan Jurnal</button>
+              </form>
+            </div>
+
+            <div class="glass-card">
+              <h3 style="font-size:15px;font-weight:800;margin-bottom:10px;">📖 Riwayat Mood & Jurnal</h3>
+              <div id="journal-list" style="max-height:420px;overflow-y:auto;"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- MOBILE BOTTOM NAVIGATION -->
+      <nav class="bottom-nav">
+        <button class="bnav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><span>📊</span>Home</button>
+        <button class="bnav-btn" data-tab="finance" onclick="switchTab('finance')"><span>💸</span>Kas</button>
+        <button class="bnav-btn" data-tab="networth" onclick="switchTab('networth')"><span>🏦</span>Neraca</button>
+        <button class="bnav-btn" data-tab="growth" onclick="switchTab('growth')"><span>🚀</span>Growth</button>
+        <button class="bnav-btn" data-tab="schedule" onclick="switchTab('schedule')"><span>📅</span>Jadwal</button>
+        <button class="bnav-btn" data-tab="journal" onclick="switchTab('journal')"><span>🧠</span>Jurnal</button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- MODAL TAMBAH KANTONG -->
+  <div id="modal-kantong" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:12px;">👛 Tambah Kantong Dana / Rekening</h3>
+      <form onsubmit="saveKantong(event)">
+        <div class="form-group">
+          <label class="form-label">Nama Kantong</label>
+          <input type="text" id="ktg-nama" class="input" placeholder="Contoh: Dompet Cash / Mandiri Utama / Tabungan S2" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipe Kantong</label>
+          <select id="ktg-tipe" class="select">
+            <option>Cash / Tunai</option>
+            <option>Rekening Bank</option>
+            <option>E-Wallet</option>
+            <option>Tabungan Khusus</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Saldo Awal (Rp)</label>
+          <input type="number" id="ktg-saldo" class="input" value="0" required />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" onclick="closeModal('modal-kantong')" class="btn btn-secondary">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Kantong</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PENYESUAIAN SALDO / CASH OPNAME -->
+  <div id="modal-adjust" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:6px;">⚖️ Penyesuaian Saldo (Cash Opname)</h3>
+      <p id="adj-kantong-name" style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;"></p>
+      <form onsubmit="submitAdjustment(event)">
+        <input type="hidden" id="adj-kantong-id" />
+        <input type="hidden" id="adj-current-bal" />
+        <div class="form-group">
+          <label class="form-label">Saldo Tercatat di Aplikasi</label>
+          <input type="text" id="adj-recorded-display" class="input" disabled />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Saldo Aktual / Fisik Saat Ini (Rp)</label>
+          <input type="number" id="adj-actual-bal" class="input" required />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" onclick="closeModal('modal-adjust')" class="btn btn-secondary">Batal</button>
+          <button type="submit" class="btn btn-primary">Sesuaikan Saldo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL TRANSFER ANTAR KANTONG -->
+  <div id="modal-transfer" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:12px;">🔁 Transfer Antar Kantong Dana</h3>
+      <form onsubmit="submitTransfer(event)">
+        <div class="form-group">
+          <label class="form-label">Dari Kantong (Sumber)</label>
+          <select id="trf-from" class="select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ke Kantong (Tujuan)</label>
+          <select id="trf-to" class="select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nominal Transfer (Rp)</label>
+          <input type="number" id="trf-nominal" class="input" required />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" onclick="closeModal('modal-transfer')" class="btn btn-secondary">Batal</button>
+          <button type="submit" class="btn btn-primary">Proses Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL SET TARGET KALORI HARIAN -->
+  <div id="modal-cal-target" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:12px;">🎯 Atur Target Kalori & Protein Harian</h3>
+      <form onsubmit="saveCalorieTarget(event)">
+        <div class="form-group">
+          <label class="form-label">Target Kalori Harian (kkal)</label>
+          <input type="number" id="inp-target-cal" class="input" value="1350" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Protein Harian (gram)</label>
+          <input type="number" id="inp-target-prot" class="input" value="110" required />
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" onclick="closeModal('modal-cal-target')" class="btn btn-secondary">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Target</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL GALERI FOTO PROGRES TUBUH -->
+  <div id="modal-body-photos" class="modal-backdrop">
+    <div class="modal-card" style="max-width:640px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 id="photo-modal-title" style="font-size:16px;font-weight:800;">📸 Foto Progres Badan</h3>
+        <button onclick="closeModal('modal-body-photos')" class="btn btn-secondary btn-sm">Tutup</button>
+      </div>
+      <div id="photo-modal-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<!-- ==================== SUPABASE MODULE SCRIPT ==================== -->
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+  // KONFIGURASI APLIKASI
+  const IS_PREVIEW = true; // Ubah menjadi false SAAT DEPLOY agar mode preview & data dummy hilang dan terhubung 100% ke Supabase
+  const SUPABASE_URL = https://ciieigjvazkdmbdjhsrg.supabase.co/rest/v1/;
+  const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpaWVpZ2p2YXprZG1iZGpoc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNjAxOTksImV4cCI6MjExMDkzNjE5OX0.H6ebTDGiU2KM5sYdiveWwXncblRo6OPNnbbQO27oH2k;
+
+  const supabase = (!IS_PREVIEW && SUPABASE_URL.startsWith('http'))
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
+  // SERVICE WORKER VIA BLOB UNTUK PWA OFFLINE CACHING
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      const CACHE_NAME = 'lifeos-supabase-v1';
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+      self.addEventListener('fetch', e => {
+        if (e.request.method !== 'GET') return;
+        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+      });
+    `;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+  }
+
+  // PWA INSTALL PROMPT
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('pwa-install-banner').style.display = 'flex';
+  });
+  document.getElementById('btn-install-pwa').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('pwa-install-banner').style.display = 'none';
+  });
+
+  // GLOBAL STATE
+  let loginMode = 'admin';
+  let currentUser = null;
+  let calTarget = Number(localStorage.getItem('lifeos_cal_target') || 1350);
+  let protTarget = Number(localStorage.getItem('lifeos_prot_target') || 110);
+
+  const todayStr = () => new Date().toISOString().split('T')[0];
+  const fmtRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+
+  // STATE DATA (MINIMAL 1-2 BARIS SAAT IS_PREVIEW = true, KOSONG SAAT IS_PREVIEW = false)
+  let db = IS_PREVIEW ? {
+    kantong_dana: [
+      { id: 1, nama_kantong: 'Dompet Tunai (Cash)', tipe_kantong: 'Cash / Tunai', saldo_awal: 750000 },
+      { id: 2, nama_kantong: 'Bank Mandiri & Tabungan S2', tipe_kantong: 'Rekening Bank', saldo_awal: 18500000 }
+    ],
+    keuangan: [
+      { id: 1, tanggal: todayStr(), tipe: 'Pemasukan', kategori: 'Gaji & Tunjangan', nominal: 6500000, kantong_id: 2, kantong_tujuan_id: null, catatan: 'Gaji bulanan', url_bukti: '' },
+      { id: 2, tanggal: todayStr(), tipe: 'Pengeluaran', kategori: 'Makan & Minum', nominal: 45000, kantong_id: 1, kantong_tujuan_id: null, catatan: 'Dada ayam & kopi Americano', url_bukti: '' }
+    ],
+    aset: [
+      { id: 1, nama_aset: 'Saham BMRI', kategori_aset: 'Saham', platform: 'Stockbit', modal_pokok: 12000000, nilai_sekarang: 13800000 },
+      { id: 2, nama_aset: 'SBN ORI025', kategori_aset: 'SBN / Obligasi', platform: 'Bibit', modal_pokok: 10000000, nilai_sekarang: 10350000 }
+    ],
+    hutang: [
+      { id: 1, jenis_hutang: 'KTA (Kredit Tanpa Agunan)', kreditur: 'Bank Mandiri', nama_hutang: 'Pinjaman Renovasi', plafon_awal: 15000000, outstanding: 6000000, tenor_total: 12, sisa_tenor: 5, bunga_tahunan: 7.5, cicilan_bulanan: 1300000, tgl_jatuh_tempo: 15 }
+    ],
+    master_habit: [
+      { id: 1, nama_habit: 'Tracking Kalori 1.350 kkal', kategori_habit: 'Kesehatan & Diet' },
+      { id: 2, nama_habit: 'Latihan IELTS Reading/Listening 45m', kategori_habit: 'Akademik & S2' }
+    ],
+    log_habit: [{ id: 1, tanggal: todayStr(), habit_id: 1, status_selesai: true }],
+    goals: [
+      { id: 1, judul_goal: 'Skor IELTS Overall 7.0 untuk Beasiswa S2', target_nilai: 7.0, progres_saat_ini: 6.0, satuan: 'Band', deadline: '2027-02-01' }
+    ],
+    s2_beasiswa: [
+      { id: 1, nama_beasiswa: 'LPDP Reguler / Targeted', kampus_negara: 'University of Melbourne (Australia)', deadline: '2027-02-15', status: 'Persiapan IELTS/LoA', kelengkapan_berkas: 'IELTS Target 6.5, Essay Komitmen 60%' }
+    ],
+    body_metrics: [
+      { id: 1, tanggal: todayStr(), berat_kg: 68.4, body_fat_pct: 18.2, massa_otot_kg: 52.4, massa_air_pct: 58.5, foto_depan_url: '', foto_samping_url: '', foto_belakang_url: '' }
+    ],
+    food_log: [
+      { id: 1, tanggal: todayStr(), waktu_makan: 'Makan Siang', nama_makanan: 'Dada Ayam Airfryer 150gr + Shirataki 40gr', kalori_kkal: 320, protein_gr: 46 }
+    ],
+    workout_log: [
+      { id: 1, tanggal: todayStr(), jenis_olahraga: 'Easy Run 5K', durasi_menit: 32, kalori_bakar: 310, link_strava_record: 'https://www.strava.com' }
+    ],
+    growth_items: [
+      { id: 1, tipe: 'ReadingList', judul: 'Atomic Habits — James Clear', sub_info: 'Self-Improvement', status: 'Selesai' }
+    ],
+    todos: [
+      { id: 1, tanggal: todayStr(), waktu: '19:30', judul_tugas: 'Review Essay Beasiswa S2', prioritas: 'Penting & Mendesak', estimasi_menit: 60, selesai: false }
+    ],
+    mood_jurnal: [
+      { id: 1, tanggal: todayStr(), skor_mood: 4, judul_jurnal: 'Konsisten Diet & Persiapan S2', isi_jurnal: 'Berhasil jaga kalori dan menyicil berkas pendaftaran beasiswa.', gratitude: 'Kesehatan, disiplin harian, dukungan keluarga' }
+    ]
+  } : {
+    kantong_dana: [], keuangan: [], aset: [], hutang: [], master_habit: [], log_habit: [],
+    goals: [], s2_beasiswa: [], body_metrics: [], food_log: [], workout_log: [],
+    growth_items: [], todos: [], mood_jurnal: []
+  };
+
+  let charts = {};
+
+  // INIT UI BERDASARKAN SAKLAR IS_PREVIEW
+  function initAppMode() {
+    if (!IS_PREVIEW) {
+      document.getElementById('preview-banner').style.display = 'none';
+      document.getElementById('preview-login-box').style.display = 'none';
+      checkExistingSupabaseSession();
+    }
+    ['fin-tanggal', 'body-tanggal', 'food-tanggal', 'wo-tanggal', 'todo-tanggal', 'jrn-tanggal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = todayStr();
+    });
+  }
+
+  async function checkExistingSupabaseSession() {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user) {
+      currentUser = { name: data.session.user.email, role: 'admin' };
+      enterApp();
+    }
+  }
+
+  // LOGIN & LOGOUT HYBRID
+  window.setLoginMode = (mode) => {
+    loginMode = mode;
+    document.getElementById('role-admin-btn').classList.toggle('active', mode === 'admin');
+    document.getElementById('role-user-btn').classList.toggle('active', mode === 'user');
+    document.getElementById('login-id-label').textContent = mode === 'admin' ? 'Email Admin' : 'Username User / Partner';
+    document.getElementById('login-identifier').placeholder = mode === 'admin' ? 'admin@lifeos.app' : 'username';
+  };
+
+  window.quickPreviewLogin = (role) => {
+    if (!IS_PREVIEW) return;
+    currentUser = { name: role === 'admin' ? 'Admin Preview' : 'User Preview', role };
+    enterApp();
+  };
+
+  window.handleLogin = async (e) => {
+    e.preventDefault();
+    const idVal = document.getElementById('login-identifier').value.trim();
+    const pwVal = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+
+    if (IS_PREVIEW) {
+      currentUser = { name: idVal, role: loginMode };
+      enterApp();
+      return;
+    }
+
+    if (!supabase) {
+      errEl.textContent = 'Konfigurasi SUPABASE_URL dan SUPABASE_ANON_KEY belum diisi.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      if (loginMode === 'admin') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: idVal, password: pwVal });
+        if (error) throw error;
+        currentUser = { name: data.user.email, role: 'admin' };
+      } else {
+        const { data, error } = await supabase
+          .from('app_users')
+          .select('*')
+          .eq('username', idVal)
+          .eq('password', pwVal)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error('Username atau password tidak ditemukan di tabel app_users.');
+        currentUser = { name: data.nama_lengkap || data.username, role: 'user' };
+      }
+      enterApp();
+    } catch (err) {
+      errEl.textContent = err.message || 'Gagal masuk ke sistem.';
+      errEl.style.display = 'block';
+    }
+  };
+
+  window.handleLogout = async () => {
+    if (!IS_PREVIEW && supabase && currentUser?.role === 'admin') {
+      await supabase.auth.signOut();
+    }
+    currentUser = null;
+    document.getElementById('app-shell').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  };
+
+  async function enterApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'flex';
+    document.getElementById('sidebar-user-badge').textContent = `${currentUser.name} (${currentUser.role.toUpperCase()})`;
+    await refreshAllData();
+  }
+
+  // LOAD SEMUA DATA DARI SUPABASE (SAAT IS_PREVIEW = false)
+  window.refreshAllData = async () => {
+    if (!IS_PREVIEW && supabase) {
+      const tables = [
+        'kantong_dana', 'keuangan', 'aset', 'hutang', 'master_habit', 'log_habit',
+        'goals', 's2_beasiswa', 'body_metrics', 'food_log', 'workout_log',
+        'growth_items', 'todos', 'mood_jurnal'
+      ];
+      await Promise.all(tables.map(async (tbl) => {
+        const { data, error } = await supabase.from(tbl).select('*').order('id', { ascending: false });
+        if (!error && data) db[tbl] = data;
+      }));
+    }
+    renderAll();
+    showToast('Data tersinkronisasi');
+  };
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2400);
+  }
+
+  // NAVIGASI TAB & SUB-TAB
+  window.switchTab = (tabName) => {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.querySelectorAll('.nav-item, .bnav-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tabName);
+    });
+    const titles = {
+      dashboard: ['Dashboard Ringkasan', 'Pantau kekayaan bersih, progres S2, diet & kebiasaan harian'],
+      finance: ['Arus Kas & Kantong Dana', 'Kelola saldo rekening/cash, penyesuaian saldo & laporan keuangan'],
+      networth: ['Neraca Kekayaan: Aset & Hutang', 'Portofolio investasi, kewajiban cicilan & Debt Payoff Planner'],
+      growth: ['Goals, Studi S2 & Fitness', 'Kebiasaan harian, target beasiswa, diet kalori & komposisi tubuh'],
+      schedule: ['Jadwal & To-Do List', 'Manajemen prioritas harian terintegrasi Google Calendar'],
+      journal: ['Mood & Daily Journaling', 'Lacak kesehatan mental dan refleksi pengembangan diri']
+    };
+    document.getElementById('page-title').textContent = titles[tabName][0];
+    document.getElementById('page-subtitle').textContent = titles[tabName][1];
+  };
+
+  window.switchSubTab = (prefix, sub, btn) => {
+    document.querySelectorAll('.' + prefix + '-sub').forEach(el => el.style.display = 'none');
+    document.getElementById(prefix + '-' + sub).style.display = 'block';
+    btn.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+  };
+
+  window.openModal = (id) => document.getElementById(id).classList.add('open');
+  window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+  // HELPER CRUD ABSTRACTION (PREVIEW MEMORY vs REAL SUPABASE)
+  async function dbInsert(table, payload) {
+    if (IS_PREVIEW) {
+      const nextId = (db[table].reduce((m, r) => Math.max(m, Number(r.id || 0)), 0)) + 1;
+      db[table].unshift({ id: nextId, ...payload });
+      return;
+    }
+    const { error } = await supabase.from(table).insert([payload]);
+    if (error) throw error;
+    await refreshAllData();
+  }
+
+  async function dbUpdate(table, id, payload) {
+    if (IS_PREVIEW) {
+      const idx = db[table].findIndex(r => String(r.id) === String(id));
+      if (idx > -1) db[table][idx] = { ...db[table][idx], ...payload };
+      return;
+    }
+    const { error } = await supabase.from(table).update(payload).eq('id', id);
+    if (error) throw error;
+    await refreshAllData();
+  }
+
+  window.dbDelete = async (table, id) => {
+    if (!confirm('Hapus data ini?')) return;
+    if (IS_PREVIEW) {
+      db[table] = db[table].filter(r => String(r.id) !== String(id));
+      renderAll();
+      showToast('Data dihapus');
+      return;
+    }
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) { alert(error.message); return; }
+    await refreshAllData();
+  };
+
+  // UPLOAD FILE KE SUPABASE STORAGE (ATAU DATA URL SAAT PREVIEW)
+  async function uploadFileToStorage(file, folder) {
+    if (!file) return '';
+    if (IS_PREVIEW) {
+      return await new Promise((res) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+    const filePath = `${folder}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+    const { error } = await supabase.storage.from('lifeos-files').upload(filePath, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from('lifeos-files').getPublicUrl(filePath);
+    return data.publicUrl;
+  }
+
+  // ==================== KANTONG & KEUANGAN ====================
+  function computeKantongBalances() {
+    const map = {};
+    db.kantong_dana.forEach(k => { map[k.id] = Number(k.saldo_awal || 0); });
+    db.keuangan.forEach(tx => {
+      const nom = Number(tx.nominal || 0);
+      if (tx.tipe === 'Pemasukan' && map[tx.kantong_id] !== undefined) map[tx.kantong_id] += nom;
+      if (tx.tipe === 'Pengeluaran' && map[tx.kantong_id] !== undefined) map[tx.kantong_id] -= nom;
+      if (tx.tipe === 'Transfer') {
+        if (map[tx.kantong_id] !== undefined) map[tx.kantong_id] -= nom;
+        if (map[tx.kantong_tujuan_id] !== undefined) map[tx.kantong_tujuan_id] += nom;
+      }
+    });
+    return map;
+  }
+
+  window.saveKantong = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('kantong_dana', {
+        nama_kantong: document.getElementById('ktg-nama').value,
+        tipe_kantong: document.getElementById('ktg-tipe').value,
+        saldo_awal: Number(document.getElementById('ktg-saldo').value || 0)
+      });
+      e.target.reset();
+      closeModal('modal-kantong');
+      renderAll();
+      showToast('Kantong dana ditambahkan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.openAdjustModal = (id, nama, currentBal) => {
+    document.getElementById('adj-kantong-id').value = id;
+    document.getElementById('adj-current-bal').value = currentBal;
+    document.getElementById('adj-kantong-name').textContent = `Kantong: ${nama}`;
+    document.getElementById('adj-recorded-display').value = fmtRp(currentBal);
+    document.getElementById('adj-actual-bal').value = currentBal;
+    openModal('modal-adjust');
+  };
+
+  window.submitAdjustment = async (e) => {
+    e.preventDefault();
+    const kId = Number(document.getElementById('adj-kantong-id').value);
+    const rec = Number(document.getElementById('adj-current-bal').value);
+    const act = Number(document.getElementById('adj-actual-bal').value);
+    const diff = act - rec;
+    if (diff === 0) { closeModal('modal-adjust'); return; }
+    try {
+      await dbInsert('keuangan', {
+        tanggal: todayStr(),
+        tipe: diff > 0 ? 'Pemasukan' : 'Pengeluaran',
+        kategori: 'Penyesuaian Saldo',
+        nominal: Math.abs(diff),
+        kantong_id: kId,
+        catatan: `Penyesuaian saldo fisik/aktual (${diff > 0 ? '+' : '-'}${fmtRp(Math.abs(diff))})`,
+        url_bukti: ''
+      });
+      closeModal('modal-adjust');
+      renderAll();
+      showToast('Saldo kantong berhasil disesuaikan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.submitTransfer = async (e) => {
+    e.preventDefault();
+    const fromId = Number(document.getElementById('trf-from').value);
+    const toId = Number(document.getElementById('trf-to').value);
+    const nom = Number(document.getElementById('trf-nominal').value);
+    if (fromId === toId) { alert('Kantong asal dan tujuan harus berbeda.'); return; }
+    try {
+      await dbInsert('keuangan', {
+        tanggal: todayStr(),
+        tipe: 'Transfer',
+        kategori: 'Transfer Antar Kantong',
+        nominal: nom,
+        kantong_id: fromId,
+        kantong_tujuan_id: toId,
+        catatan: 'Pemindahan dana antar kantong',
+        url_bukti: ''
+      });
+      closeModal('modal-transfer');
+      renderAll();
+      showToast('Transfer antar kantong berhasil');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.saveKeuangan = async (e) => {
+    e.preventDefault();
+    try {
+      const file = document.getElementById('fin-file').files[0];
+      const urlBukti = await uploadFileToStorage(file, 'struk');
+      await dbInsert('keuangan', {
+        tanggal: document.getElementById('fin-tanggal').value,
+        tipe: document.getElementById('fin-tipe').value,
+        kategori: document.getElementById('fin-kategori').value,
+        nominal: Number(document.getElementById('fin-nominal').value),
+        kantong_id: Number(document.getElementById('fin-kantong').value),
+        catatan: document.getElementById('fin-catatan').value,
+        url_bukti: urlBukti
+      });
+      document.getElementById('fin-nominal').value = '';
+      document.getElementById('fin-catatan').value = '';
+      document.getElementById('fin-file').value = '';
+      renderAll();
+      showToast('Transaksi tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.togglePeriodInputs = () => {
+    const mode = document.getElementById('fin-period-mode').value;
+    const box = document.getElementById('fin-period-extra');
+    const yr = new Date().getFullYear();
+    if (mode === 'all') { box.style.display = 'none'; box.innerHTML = ''; }
+    else if (mode === 'range') {
+      box.style.display = 'flex';
+      box.innerHTML = `<input type="date" id="fin-start" class="input" style="flex:1;" onchange="renderFinanceList()"><input type="date" id="fin-end" class="input" style="flex:1;" onchange="renderFinanceList()">`;
+    } else if (mode === 'quarter') {
+      box.style.display = 'flex';
+      box.innerHTML = `<select id="fin-q" class="select" style="flex:1;" onchange="renderFinanceList()"><option value="1">Q1 (Jan-Mar)</option><option value="2">Q2 (Apr-Jun)</option><option value="3">Q3 (Jul-Sep)</option><option value="4">Q4 (Okt-Des)</option></select><input type="number" id="fin-yr" class="input" style="width:100px;" value="${yr}" onchange="renderFinanceList()">`;
+    } else if (mode === 'semester') {
+      box.style.display = 'flex';
+      box.innerHTML = `<select id="fin-s" class="select" style="flex:1;" onchange="renderFinanceList()"><option value="1">Semester 1 (Jan-Jun)</option><option value="2">Semester 2 (Jul-Des)</option></select><input type="number" id="fin-yr" class="input" style="width:100px;" value="${yr}" onchange="renderFinanceList()">`;
+    } else if (mode === 'year') {
+      box.style.display = 'flex';
+      box.innerHTML = `<input type="number" id="fin-yr" class="input" value="${yr}" onchange="renderFinanceList()">`;
+    }
+    renderFinanceList();
+  };
+
+  function getFilteredFinance() {
+    const q = (document.getElementById('fin-search')?.value || '').toLowerCase();
+    const mode = document.getElementById('fin-period-mode')?.value || 'all';
+    return db.keuangan.filter(tx => {
+      const matchText = !q || `${tx.kategori} ${tx.catatan} ${tx.nominal} ${tx.tipe}`.toLowerCase().includes(q);
+      if (!matchText) return false;
+      if (mode === 'all') return true;
+      const d = new Date(tx.tanggal);
+      const m = d.getMonth() + 1;
+      const y = d.getFullYear();
+      if (mode === 'range') {
+        const s = document.getElementById('fin-start')?.value;
+        const e = document.getElementById('fin-end')?.value;
+        if (s && tx.tanggal < s) return false;
+        if (e && tx.tanggal > e) return false;
+        return true;
+      }
+      const targetYr = Number(document.getElementById('fin-yr')?.value || y);
+      if (y !== targetYr) return false;
+      if (mode === 'quarter') return Math.ceil(m / 3) === Number(document.getElementById('fin-q')?.value || 1);
+      if (mode === 'semester') return (m <= 6 ? 1 : 2) === Number(document.getElementById('fin-s')?.value || 1);
+      return true;
+    });
+  }
+
+  window.renderFinanceList = () => {
+    const rows = getFilteredFinance();
+    let inc = 0, exp = 0;
+    rows.forEach(r => {
+      if (r.tipe === 'Pemasukan') inc += Number(r.nominal);
+      if (r.tipe === 'Pengeluaran') exp += Number(r.nominal);
+    });
+    document.getElementById('finance-summary-bar').textContent =
+      `Filter (${rows.length} transaksi): Masuk ${fmtRp(inc)} • Keluar ${fmtRp(exp)} • Net ${fmtRp(inc - exp)}`;
+
+    const el = document.getElementById('finance-list');
+    if (!rows.length) {
+      el.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Belum ada data transaksi pada periode ini.</p>`;
+      return;
+    }
+    el.innerHTML = rows.map(r => {
+      const isInc = r.tipe === 'Pemasukan';
+      const isTrf = r.tipe === 'Transfer';
+      const badgeCls = isTrf ? 'badge-blue' : (isInc ? 'badge-green' : 'badge-red');
+      const sign = isTrf ? '🔁' : (isInc ? '+' : '-');
+      const buktiLink = r.url_bukti ? `<a href="${r.url_bukti}" target="_blank" style="font-size:11px;color:var(--accent);font-weight:700;margin-left:6px;">📎 Bukti</a>` : '';
+      return `
+        <div class="list-row">
+          <div>
+            <div style="font-size:13px;font-weight:700;">${r.kategori} <span class="badge ${badgeCls}">${r.tipe}</span>${buktiLink}</div>
+            <div style="font-size:11.5px;color:var(--text-muted);">${r.tanggal} • ${r.catatan || '-'}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13.5px;font-weight:800;color:${isTrf ? 'var(--accent)' : (isInc ? 'var(--success)' : 'var(--danger)')};">${sign} ${fmtRp(r.nominal)}</div>
+            <button onclick="dbDelete('keuangan', ${r.id})" class="btn btn-danger btn-sm" style="margin-top:4px;padding:2px 7px;">Hapus</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  window.exportFinanceCSV = () => {
+    const rows = getFilteredFinance();
+    let csv = 'Tanggal,Tipe,Kategori,Nominal,Catatan\n';
+    rows.forEach(r => { csv += `"${r.tanggal}","${r.tipe}","${r.kategori}",${r.nominal},"${(r.catatan || '').replace(/"/g, '""')}"\n`; });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `Laporan_Keuangan_LifeOS_${todayStr()}.csv`;
+    a.click();
+  };
+
+  window.printFinancePDF = () => {
+    const rows = getFilteredFinance();
+    let inc = 0, exp = 0;
+    rows.forEach(r => { if (r.tipe === 'Pemasukan') inc += Number(r.nominal); if (r.tipe === 'Pengeluaran') exp += Number(r.nominal); });
+    const w = window.open('', '_blank');
+    w.document.write(`
+      <html><head><title>Laporan Keuangan Komprehensif — LifeOS</title>
+      <style>body{font-family:sans-serif;padding:24px;}table{width:100%;border-collapse:collapse;margin-top:16px;}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px;text-align:left;}th{background:#f1f5f9;}</style>
+      </head><body>
+      <h2>Laporan Keuangan Komprehensif — LifeOS</h2>
+      <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+      <p><strong>Total Pemasukan:</strong> ${fmtRp(inc)} | <strong>Total Pengeluaran:</strong> ${fmtRp(exp)} | <strong>Net Cashflow:</strong> ${fmtRp(inc - exp)}</p>
+      <table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Kategori</th><th>Nominal</th><th>Catatan</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td>${r.tanggal}</td><td>${r.tipe}</td><td>${r.kategori}</td><td>${fmtRp(r.nominal)}</td><td>${r.catatan || '-'}</td></tr>`).join('')}
+      </tbody></table><script>window.print();<\/script></body></html>
+    `);
+    w.document.close();
+  };
+
+  // ==================== ASET & HUTANG ====================
+  window.saveAset = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('aset', {
+        nama_aset: document.getElementById('aset-nama').value,
+        kategori_aset: document.getElementById('aset-kategori').value,
+        platform: document.getElementById('aset-platform').value,
+        modal_pokok: Number(document.getElementById('aset-modal').value),
+        nilai_sekarang: Number(document.getElementById('aset-nilai').value)
+      });
+      e.target.reset();
+      renderAll();
+      showToast('Aset investasi tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.saveHutang = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('hutang', {
+        jenis_hutang: document.getElementById('debt-jenis').value,
+        kreditur: document.getElementById('debt-kreditur').value,
+        nama_hutang: document.getElementById('debt-nama').value,
+        plafon_awal: Number(document.getElementById('debt-plafon').value),
+        outstanding: Number(document.getElementById('debt-outstanding').value),
+        tenor_total: Number(document.getElementById('debt-tenor-total').value),
+        sisa_tenor: Number(document.getElementById('debt-sisa-tenor').value),
+        bunga_tahunan: Number(document.getElementById('debt-bunga').value),
+        cicilan_bulanan: Number(document.getElementById('debt-cicilan').value),
+        tgl_jatuh_tempo: Number(document.getElementById('debt-jatuh-tempo').value)
+      });
+      e.target.reset();
+      renderAll();
+      showToast('Data hutang dicatat');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.payDebtInstallment = async (id) => {
+    const item = db.hutang.find(h => String(h.id) === String(id));
+    if (!item) return;
+    const bayar = Number(prompt(`Masukkan nominal pembayaran cicilan untuk "${item.nama_hutang}":`, item.cicilan_bulanan));
+    if (!bayar || bayar <= 0) return;
+    const sisaBaru = Math.max(0, Number(item.outstanding) - bayar);
+    const tenorBaru = Math.max(0, Number(item.sisa_tenor) - 1);
+    try {
+      await dbUpdate('hutang', id, { outstanding: sisaBaru, sisa_tenor: tenorBaru });
+      renderAll();
+      showToast('Cicilan hutang diperbarui');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.renderPayoffPlanner = () => {
+    const el = document.getElementById('payoff-plan-result');
+    const activeDebts = db.hutang.filter(h => Number(h.outstanding) > 0);
+    if (!activeDebts.length) {
+      el.innerHTML = `<div class="badge badge-green">🎉 Bebas Hutang! Tidak ada kewajiban aktif.</div>`;
+      return;
+    }
+    const method = document.getElementById('payoff-method').value;
+    const extra = Number(document.getElementById('payoff-extra').value || 0);
+    const sorted = [...activeDebts].sort((a, b) =>
+      method === 'avalanche'
+        ? Number(b.bunga_tahunan) - Number(a.bunga_tahunan)
+        : Number(a.outstanding) - Number(b.outstanding)
+    );
+    const priority = sorted[0];
+    const totalDebt = activeDebts.reduce((s, d) => s + Number(d.outstanding), 0);
+    const totalMin = activeDebts.reduce((s, d) => s + Number(d.cicilan_bulanan), 0);
+    const estMonths = Math.ceil(totalDebt / Math.max(1, totalMin + extra));
+    el.innerHTML = `
+      <div style="padding:12px;border-radius:12px;background:#fef3c7;border:1px solid #fde68a;font-size:12.5px;">
+        <div><strong>Prioritas Lunas #1 (${method.toUpperCase()}):</strong> ${priority.nama_hutang} (${priority.kreditur})</div>
+        <div style="margin-top:4px;">Total Bayar/Bln (Wajib + Ekstra): <strong>${fmtRp(totalMin + extra)}</strong> → Estimasi Bebas Hutang: <strong>~${estMonths} bulan</strong></div>
+      </div>
+    `;
+  };
+
+  // ==================== GOALS, S2, FITNESS & DIRECT GEMINI ====================
+  window.saveHabit = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('master_habit', {
+        nama_habit: document.getElementById('hab-nama').value,
+        kategori_habit: document.getElementById('hab-kategori').value
+      });
+      e.target.reset();
+      renderAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.toggleHabitToday = async (habitId) => {
+    const existing = db.log_habit.find(l => l.tanggal === todayStr() && String(l.habit_id) === String(habitId));
+    try {
+      if (existing) {
+        await dbUpdate('log_habit', existing.id, { status_selesai: !existing.status_selesai });
+      } else {
+        await dbInsert('log_habit', { tanggal: todayStr(), habit_id: habitId, status_selesai: true });
+      }
+      renderAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.saveGoal = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('goals', {
+        judul_goal: document.getElementById('goal-judul').value,
+        target_nilai: Number(document.getElementById('goal-target').value),
+        progres_saat_ini: Number(document.getElementById('goal-progres').value),
+        satuan: document.getElementById('goal-satuan').value,
+        deadline: document.getElementById('goal-deadline').value
+      });
+      e.target.reset();
+      renderAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.saveS2 = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('s2_beasiswa', {
+        nama_beasiswa: document.getElementById('s2-beasiswa').value,
+        kampus_negara: document.getElementById('s2-kampus').value,
+        deadline: document.getElementById('s2-deadline').value,
+        status: document.getElementById('s2-status').value,
+        kelengkapan_berkas: document.getElementById('s2-berkas').value
+      });
+      e.target.reset();
+      renderAll();
+      showToast('Target beasiswa S2 tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  // BODY COMPOSITION + PHOTO PROGRESS
+  window.saveBodyMetric = async (e) => {
+    e.preventDefault();
+    try {
+      const editId = document.getElementById('body-edit-id').value;
+      const fDepan = document.getElementById('body-foto-depan').files[0];
+      const fSamping = document.getElementById('body-foto-samping').files[0];
+      const fBelakang = document.getElementById('body-foto-belakang').files[0];
+      const payload = {
+        tanggal: document.getElementById('body-tanggal').value,
+        berat_kg: Number(document.getElementById('body-berat').value),
+        body_fat_pct: Number(document.getElementById('body-fat').value || 0),
+        massa_otot_kg: Number(document.getElementById('body-muscle').value || 0),
+        massa_air_pct: Number(document.getElementById('body-water').value || 0)
+      };
+      if (fDepan) payload.foto_depan_url = await uploadFileToStorage(fDepan, 'body');
+      if (fSamping) payload.foto_samping_url = await uploadFileToStorage(fSamping, 'body');
+      if (fBelakang) payload.foto_belakang_url = await uploadFileToStorage(fBelakang, 'body');
+
+      if (editId) await dbUpdate('body_metrics', editId, payload);
+      else await dbInsert('body_metrics', payload);
+
+      resetBodyForm();
+      renderAll();
+      showToast('Data komposisi tubuh tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.editBodyMetric = (id) => {
+    const m = db.body_metrics.find(x => String(x.id) === String(id));
+    if (!m) return;
+    document.getElementById('body-edit-id').value = m.id;
+    document.getElementById('body-tanggal').value = m.tanggal;
+    document.getElementById('body-berat').value = m.berat_kg;
+    document.getElementById('body-fat').value = m.body_fat_pct;
+    document.getElementById('body-muscle').value = m.massa_otot_kg;
+    document.getElementById('body-water').value = m.massa_air_pct;
+    document.getElementById('btn-save-body').textContent = 'Update Timbangan';
+    document.getElementById('btn-cancel-body').style.display = 'inline-flex';
+  };
+
+  window.resetBodyForm = () => {
+    document.getElementById('body-edit-id').value = '';
+    document.getElementById('body-tanggal').value = todayStr();
+    ['body-berat', 'body-fat', 'body-muscle', 'body-water', 'body-foto-depan', 'body-foto-samping', 'body-foto-belakang'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('btn-save-body').textContent = 'Simpan Data Timbangan';
+    document.getElementById('btn-cancel-body').style.display = 'none';
+  };
+
+  window.openBodyPhotos = (id) => {
+    const m = db.body_metrics.find(x => String(x.id) === String(id));
+    if (!m) return;
+    document.getElementById('photo-modal-title').textContent = `📸 Progres Badan (${m.tanggal} • ${m.berat_kg} kg)`;
+    const slots = [
+      { label: 'Tampak Depan', url: m.foto_depan_url },
+      { label: 'Tampak Samping', url: m.foto_samping_url },
+      { label: 'Tampak Belakang', url: m.foto_belakang_url }
+    ];
+    document.getElementById('photo-modal-grid').innerHTML = slots.map(s => `
+      <div style="border:1px solid #e2e8f0;border-radius:12px;padding:8px;text-align:center;">
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${s.label}</div>
+        ${s.url ? `<img src="${s.url}" style="width:100%;height:220px;object-fit:cover;border-radius:8px;" />` : `<div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;background:#f8fafc;border-radius:8px;">Belum ada foto</div>`}
+      </div>
+    `).join('');
+    openModal('modal-body-photos');
+  };
+
+  // DIRECT GEMINI COPY-PASTE HELPER (TANPA API TOKEN)
+  window.copyPromptOpenGemini = async () => {
+    const raw = document.getElementById('food-raw-prompt').value.trim();
+    if (!raw) { alert('Ketik dulu makanan & gramasinya!'); return; }
+    const promptText = `Hitung estimasi total kalori dan protein untuk makanan berikut: "${raw}". Balas HANYA dalam format JSON persis seperti ini tanpa teks tambahan: {"menu":"nama menu ringkas","kalori":350,"protein":30}`;
+    try {
+      await navigator.clipboard.writeText(promptText);
+      showToast('Prompt tersalin! Membuka Gemini...');
+    } catch (_) {}
+    window.open('https://gemini.google.com/app', '_blank');
+  };
+
+  window.pasteFromGemini = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.menu) document.getElementById('food-nama').value = parsed.menu;
+        if (parsed.kalori) document.getElementById('food-kalori').value = Number(parsed.kalori);
+        if (parsed.protein) document.getElementById('food-protein').value = Number(parsed.protein);
+        showToast('Hasil kalori & protein Gemini otomatis terisi!');
+      } else {
+        const calM = text.match(/(\d+)\s*(kkal|kcal|kalori)/i);
+        const protM = text.match(/(\d+(?:[.,]\d+)?)\s*(g|gr|gram)\s*protein/i);
+        document.getElementById('food-nama').value = document.getElementById('food-raw-prompt').value || 'Menu dari Gemini';
+        if (calM) document.getElementById('food-kalori').value = calM[1];
+        if (protM) document.getElementById('food-protein').value = protM[1].replace(',', '.');
+        showToast('Angka nutrisi berhasil diekstrak!');
+      }
+    } catch (err) {
+      alert('Izinkan akses clipboard di browser atau tempel manual hasil dari Gemini.');
+    }
+  };
+
+  window.saveCalorieTarget = (e) => {
+    e.preventDefault();
+    calTarget = Number(document.getElementById('inp-target-cal').value || 1350);
+    protTarget = Number(document.getElementById('inp-target-prot').value || 110);
+    localStorage.setItem('lifeos_cal_target', calTarget);
+    localStorage.setItem('lifeos_prot_target', protTarget);
+    closeModal('modal-cal-target');
+    renderAll();
+    showToast('Target kalori & protein diperbarui');
+  };
+
+  window.saveFoodLog = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('food_log', {
+        tanggal: document.getElementById('food-tanggal').value,
+        waktu_makan: document.getElementById('food-waktu').value,
+        nama_makanan: document.getElementById('food-nama').value,
+        kalori_kkal: Number(document.getElementById('food-kalori').value),
+        protein_gr: Number(document.getElementById('food-protein').value || 0)
+      });
+      document.getElementById('food-nama').value = '';
+      document.getElementById('food-kalori').value = '';
+      document.getElementById('food-protein').value = '0';
+      renderAll();
+      showToast('Asupan makanan tercatat');
+    } catch (err) { alert(err.message); }
+  };
+
+  // WORKOUT LOG
+  window.saveWorkout = async (e) => {
+    e.preventDefault();
+    try {
+      const editId = document.getElementById('wo-edit-id').value;
+      const payload = {
+        tanggal: document.getElementById('wo-tanggal').value,
+        jenis_olahraga: document.getElementById('wo-jenis').value,
+        durasi_menit: Number(document.getElementById('wo-durasi').value),
+        kalori_bakar: Number(document.getElementById('wo-kalori').value),
+        link_strava_record: document.getElementById('wo-link').value
+      };
+      if (editId) await dbUpdate('workout_log', editId, payload);
+      else await dbInsert('workout_log', payload);
+      resetWorkoutForm();
+      renderAll();
+      showToast('Log olahraga tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  window.editWorkout = (id) => {
+    const w = db.workout_log.find(x => String(x.id) === String(id));
+    if (!w) return;
+    document.getElementById('wo-edit-id').value = w.id;
+    document.getElementById('wo-tanggal').value = w.tanggal;
+    document.getElementById('wo-jenis').value = w.jenis_olahraga;
+    document.getElementById('wo-durasi').value = w.durasi_menit;
+    document.getElementById('wo-kalori').value = w.kalori_bakar;
+    document.getElementById('wo-link').value = w.link_strava_record || '';
+    document.getElementById('btn-save-wo').textContent = 'Update Olahraga';
+    document.getElementById('btn-cancel-wo').style.display = 'inline-flex';
+  };
+
+  window.resetWorkoutForm = () => {
+    document.getElementById('wo-edit-id').value = '';
+    document.getElementById('wo-tanggal').value = todayStr();
+    document.getElementById('wo-jenis').value = '';
+    document.getElementById('wo-link').value = '';
+    document.getElementById('btn-save-wo').textContent = 'Simpan Log Olahraga';
+    document.getElementById('btn-cancel-wo').style.display = 'none';
+  };
+
+  // BUCKET / READING LIST, TODO & JOURNAL
+  window.saveGrowthItem = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('growth_items', {
+        tipe: document.getElementById('gi-tipe').value,
+        judul: document.getElementById('gi-judul').value,
+        sub_info: document.getElementById('gi-sub').value,
+        status: 'Aktif'
+      });
+      e.target.reset();
+      renderAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.saveTodo = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('todos', {
+        judul_tugas: document.getElementById('todo-judul').value,
+        tanggal: document.getElementById('todo-tanggal').value,
+        waktu: document.getElementById('todo-waktu').value,
+        prioritas: document.getElementById('todo-prioritas').value,
+        estimasi_menit: Number(document.getElementById('todo-durasi').value || 60),
+        selesai: false
+      });
+      e.target.reset();
+      document.getElementById('todo-tanggal').value = todayStr();
+      renderAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  window.openGoogleCalendarLink = (judul, tanggal, waktu) => {
+    const cleanDate = (tanggal || todayStr()).replace(/-/g, '');
+    const cleanTime = (waktu || '08:00').replace(':', '') + '00';
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(judul)}&dates=${cleanDate}T${cleanTime}/${cleanDate}T${cleanTime}`;
+    window.open(url, '_blank');
+  };
+
+  window.saveJournal = async (e) => {
+    e.preventDefault();
+    try {
+      await dbInsert('mood_jurnal', {
+        tanggal: document.getElementById('jrn-tanggal').value,
+        skor_mood: Number(document.getElementById('jrn-mood').value),
+        judul_jurnal: document.getElementById('jrn-judul').value,
+        isi_jurnal: document.getElementById('jrn-isi').value,
+        gratitude: document.getElementById('jrn-gratitude').value
+      });
+      e.target.reset();
+      document.getElementById('jrn-tanggal').value = todayStr();
+      renderAll();
+      showToast('Jurnal harian tersimpan');
+    } catch (err) { alert(err.message); }
+  };
+
+  // ==================== MASTER RENDERER ====================
+  function renderAll() {
+    const balMap = computeKantongBalances();
+    const totalKas = Object.values(balMap).reduce((s, v) => s + v, 0);
+    const totalAset = db.aset.reduce((s, a) => s + Number(a.nilai_sekarang || 0), 0);
+    const totalModal = db.aset.reduce((s, a) => s + Number(a.modal_pokok || 0), 0);
+    const totalHutang = db.hutang.reduce((s, h) => s + Number(h.outstanding || 0), 0);
+    const totalCicilan = db.hutang.reduce((s, h) => s + (Number(h.outstanding) > 0 ? Number(h.cicilan_bulanan || 0) : 0), 0);
+    const trueNetWorth = (totalAset + totalKas) - totalHutang;
+
+    // KANTONG LIST & DROPDOWNS
+    const kListEl = document.getElementById('kantong-list');
+    kListEl.innerHTML = db.kantong_dana.length ? db.kantong_dana.map(k => {
+      const bal = balMap[k.id] || 0;
+      return `
+        <div style="padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text-muted);">${k.tipe_kantong}</div>
+          <div style="font-size:14px;font-weight:800;margin:2px 0;">${k.nama_kantong}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--primary);">${fmtRp(bal)}</div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="openAdjustModal(${k.id}, '${k.nama_kantong.replace(/'/g, '')}', ${bal})" class="btn btn-outline btn-sm">⚖️ Sesuaikan</button>
+            <button onclick="dbDelete('kantong_dana', ${k.id})" class="btn btn-danger btn-sm">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('') : `<p style="font-size:12.5px;color:var(--text-muted);">Belum ada kantong dana. Klik <b>+ Kantong</b> untuk membuat.</p>`;
+
+    const kOpts = db.kantong_dana.map(k => `<option value="${k.id}">${k.nama_kantong} (${fmtRp(balMap[k.id] || 0)})</option>`).join('');
+    ['fin-kantong', 'trf-from', 'trf-to'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = kOpts || `<option value="">Buat kantong dulu</option>`;
+    });
+
+    renderFinanceList();
+
+    // NERACA KPI & LISTS
+    document.getElementById('nw-total-aset').textContent = fmtRp(totalAset);
+    const pnlPct = totalModal > 0 ? (((totalAset - totalModal) / totalModal) * 100).toFixed(1) : '0.0';
+    document.getElementById('nw-aset-pnl').textContent = `Modal: ${fmtRp(totalModal)} (PnL: ${pnlPct}%)`;
+    document.getElementById('nw-total-hutang').textContent = fmtRp(totalHutang);
+    document.getElementById('nw-cicilan-bulanan').textContent = `Cicilan wajib: ${fmtRp(totalCicilan)}/bln`;
+    document.getElementById('nw-true-networth').textContent = fmtRp(trueNetWorth);
+    const ratio = (totalAset + totalKas) > 0 ? ((totalHutang / (totalAset + totalKas)) * 100).toFixed(1) : '0.0';
+    document.getElementById('nw-debt-ratio').textContent = `${ratio}%`;
+
+    document.getElementById('aset-list').innerHTML = db.aset.length ? db.aset.map(a => {
+      const diff = Number(a.nilai_sekarang) - Number(a.modal_pokok);
+      return `
+        <div class="list-row">
+          <div>
+            <div style="font-size:13.5px;font-weight:800;">${a.nama_aset} <span class="badge badge-blue">${a.kategori_aset}</span></div>
+            <div style="font-size:11.5px;color:var(--text-muted);">${a.platform || '-'} • Modal: ${fmtRp(a.modal_pokok)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13.5px;font-weight:800;">${fmtRp(a.nilai_sekarang)}</div>
+            <div style="font-size:11px;font-weight:700;color:${diff >= 0 ? 'var(--success)' : 'var(--danger)'};">${diff >= 0 ? '+' : ''}${fmtRp(diff)}</div>
+            <button onclick="dbDelete('aset', ${a.id})" class="btn btn-danger btn-sm" style="margin-top:4px;padding:2px 7px;">Hapus</button>
+          </div>
+        </div>
+      `;
+    }).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada portofolio aset.</p>`;
+
+    document.getElementById('hutang-list').innerHTML = db.hutang.length ? db.hutang.map(h => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13.5px;font-weight:800;">${h.nama_hutang} <span class="badge badge-amber">${h.jenis_hutang}</span></div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${h.kreditur} • Tenor: ${h.sisa_tenor}/${h.tenor_total} bln • Bunga ${h.bunga_tahunan}% • JT Tgl ${h.tgl_jatuh_tempo}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">Plafon: ${fmtRp(h.plafon_awal)} • Cicilan: ${fmtRp(h.cicilan_bulanan)}/bln</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13.5px;font-weight:800;color:var(--danger);">${fmtRp(h.outstanding)}</div>
+          <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px;">
+            <button onclick="payDebtInstallment(${h.id})" class="btn btn-primary btn-sm">Bayar</button>
+            <button onclick="dbDelete('hutang', ${h.id})" class="btn btn-danger btn-sm">✕</button>
+          </div>
+        </div>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada catatan hutang.</p>`;
+    renderPayoffPlanner();
+
+    // HABITS, GOALS & S2
+    const doneIds = new Set(db.log_habit.filter(l => l.tanggal === todayStr() && l.status_selesai).map(l => String(l.habit_id)));
+    document.getElementById('habit-list').innerHTML = db.master_habit.length ? db.master_habit.map(h => {
+      const checked = doneIds.has(String(h.id));
+      return `
+        <div class="list-row">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleHabitToday(${h.id})" style="width:18px;height:18px;" />
+            <div>
+              <div style="font-size:13.5px;font-weight:700;text-decoration:${checked ? 'line-through' : 'none'};">${h.nama_habit}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${h.kategori_habit}</div>
+            </div>
+          </label>
+          <button onclick="dbDelete('master_habit', ${h.id})" class="btn btn-danger btn-sm">✕</button>
+        </div>
+      `;
+    }).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada habit terdaftar.</p>`;
+
+    document.getElementById('goals-list').innerHTML = db.goals.length ? db.goals.map(g => {
+      const pct = Math.min(100, Math.round((Number(g.progres_saat_ini) / Math.max(1, Number(g.target_nilai))) * 100));
+      return `
+        <div class="list-row" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;justify-content:space-between;">
+            <strong>${g.judul_goal}</strong>
+            <span class="badge badge-green">${g.progres_saat_ini}/${g.target_nilai} ${g.satuan} (${pct}%)</span>
+          </div>
+          <div class="progress-bar" style="margin:6px 0;"><div class="progress-fill" style="width:${pct}%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-muted);">
+            <span>Deadline: ${g.deadline || '-'}</span>
+            <button onclick="dbDelete('goals', ${g.id})" class="btn btn-danger btn-sm">Hapus</button>
+          </div>
+        </div>
+      `;
+    }).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada target goal.</p>`;
+
+    document.getElementById('s2-list').innerHTML = db.s2_beasiswa.length ? db.s2_beasiswa.map(s => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13.5px;font-weight:800;">${s.nama_beasiswa} <span class="badge badge-blue">${s.status}</span></div>
+          <div style="font-size:12px;font-weight:600;">${s.kampus_negara} • Deadline: ${s.deadline}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${s.kelengkapan_berkas || '-'}</div>
+        </div>
+        <button onclick="dbDelete('s2_beasiswa', ${s.id})" class="btn btn-danger btn-sm">✕</button>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada target beasiswa S2.</p>`;
+
+    // BODY METRICS, FOOD LOG & WORKOUT
+    document.getElementById('body-list').innerHTML = db.body_metrics.length ? db.body_metrics.map(m => {
+      const hasPhoto = m.foto_depan_url || m.foto_samping_url || m.foto_belakang_url;
+      return `
+        <div class="list-row">
+          <div>
+            <div style="font-size:13px;font-weight:800;">${m.tanggal} — ${m.berat_kg} kg</div>
+            <div style="font-size:11.5px;color:var(--text-muted);">Lemak: ${m.body_fat_pct || '-'}% • Otot: ${m.massa_otot_kg || '-'} kg • Air: ${m.massa_air_pct || '-'}%</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            ${hasPhoto ? `<button onclick="openBodyPhotos(${m.id})" class="btn btn-outline btn-sm">📸 Foto</button>` : ''}
+            <button onclick="editBodyMetric(${m.id})" class="btn btn-secondary btn-sm">✏️</button>
+            <button onclick="dbDelete('body_metrics', ${m.id})" class="btn btn-danger btn-sm">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada data timbangan.</p>`;
+
+    const todayFoods = db.food_log.filter(f => f.tanggal === todayStr());
+    const todayCal = todayFoods.reduce((s, f) => s + Number(f.kalori_kkal || 0), 0);
+    const todayProt = todayFoods.reduce((s, f) => s + Number(f.protein_gr || 0), 0);
+    const calPct = Math.min(100, Math.round((todayCal / Math.max(1, calTarget)) * 100));
+    document.getElementById('cal-today-label').textContent = `Kalori Hari Ini: ${todayCal} / ${calTarget} kkal`;
+    document.getElementById('prot-today-label').textContent = `Protein: ${todayProt} / ${protTarget} gr`;
+    const calFill = document.getElementById('cal-progress-fill');
+    calFill.style.width = calPct + '%';
+    calFill.style.background = todayCal > calTarget ? 'var(--danger)' : 'linear-gradient(90deg,var(--primary),#10b981)';
+
+    document.getElementById('food-list').innerHTML = db.food_log.length ? db.food_log.map(f => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${f.nama_makanan} <span class="badge badge-green">${f.waktu_makan}</span></div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${f.tanggal} • ${f.kalori_kkal} kkal • Protein ${f.protein_gr}g</div>
+        </div>
+        <button onclick="dbDelete('food_log', ${f.id})" class="btn btn-danger btn-sm">✕</button>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada catatan makanan.</p>`;
+
+    document.getElementById('workout-list').innerHTML = db.workout_log.length ? db.workout_log.map(w => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13px;font-weight:800;">${w.jenis_olahraga}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${w.tanggal} • ${w.durasi_menit} mnt • 🔥 ${w.kalori_bakar} kkal ${w.link_strava_record ? `<a href="${w.link_strava_record}" target="_blank" style="color:var(--primary);font-weight:700;margin-left:6px;">Strava ↗</a>` : ''}</div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button onclick="editWorkout(${w.id})" class="btn btn-secondary btn-sm">✏️</button>
+          <button onclick="dbDelete('workout_log', ${w.id})" class="btn btn-danger btn-sm">✕</button>
+        </div>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada log olahraga.</p>`;
+
+    // GROWTH ITEMS, TODOS & JOURNAL
+    document.getElementById('growth-items-list').innerHTML = db.growth_items.length ? db.growth_items.map(g => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${g.judul} <span class="badge badge-blue">${g.tipe}</span></div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${g.sub_info || '-'}</div>
+        </div>
+        <button onclick="dbDelete('growth_items', ${g.id})" class="btn btn-danger btn-sm">✕</button>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada item bucket/reading list.</p>`;
+
+    document.getElementById('todo-list').innerHTML = db.todos.length ? db.todos.map(t => `
+      <div class="list-row">
+        <div>
+          <div style="font-size:13.5px;font-weight:700;">${t.judul_tugas} <span class="badge badge-amber">${t.prioritas}</span></div>
+          <div style="font-size:11.5px;color:var(--text-muted);">${t.tanggal} • Jam ${t.waktu || '08:00'} (${t.estimasi_menit} mnt)</div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button onclick="openGoogleCalendarLink('${t.judul_tugas.replace(/'/g, '')}', '${t.tanggal}', '${t.waktu}')" class="btn btn-outline btn-sm">📅 GCal</button>
+          <button onclick="dbDelete('todos', ${t.id})" class="btn btn-danger btn-sm">✕</button>
+        </div>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada tugas terjadwal.</p>`;
+
+    document.getElementById('journal-list').innerHTML = db.mood_jurnal.length ? db.mood_jurnal.map(j => `
+      <div class="list-row" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;justify-content:space-between;">
+          <strong>${j.judul_jurnal}</strong>
+          <span class="badge badge-green">Mood ${j.skor_mood}/5 • ${j.tanggal}</span>
+        </div>
+        <p style="font-size:12.5px;margin:6px 0;">${j.isi_jurnal || ''}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--text-muted);">
+          <span>🙏 ${j.gratitude || '-'}</span>
+          <button onclick="dbDelete('mood_jurnal', ${j.id})" class="btn btn-danger btn-sm">Hapus</button>
+        </div>
+      </div>
+    `).join('') : `<p style="font-size:13px;color:var(--text-muted);">Belum ada entri jurnal.</p>`;
+
+    // DASHBOARD KPI
+    const thisMonth = todayStr().slice(0, 7);
+    let mInc = 0, mExp = 0;
+    db.keuangan.filter(k => (k.tanggal || '').startsWith(thisMonth)).forEach(k => {
+      if (k.tipe === 'Pemasukan') mInc += Number(k.nominal);
+      if (k.tipe === 'Pengeluaran') mExp += Number(k.nominal);
+    });
+    document.getElementById('dash-networth').textContent = fmtRp(trueNetWorth);
+    document.getElementById('dash-networth-sub').textContent = `Aset & Kas: ${fmtRp(totalAset + totalKas)} | Hutang: ${fmtRp(totalHutang)}`;
+    document.getElementById('dash-cashflow').textContent = fmtRp(mInc - mExp);
+    document.getElementById('dash-cashflow-sub').textContent = `Masuk: ${fmtRp(mInc)} | Keluar: ${fmtRp(mExp)}`;
+    const habPct = db.master_habit.length ? Math.round((doneIds.size / db.master_habit.length) * 100) : 0;
+    document.getElementById('dash-habit-cal').textContent = `${habPct}% • ${todayCal} kkal`;
+    const latestWeight = db.body_metrics[0]?.berat_kg ? `${db.body_metrics[0].berat_kg} kg` : '- kg';
+    document.getElementById('dash-s2-weight').textContent = `${db.s2_beasiswa.length} Beasiswa • ${latestWeight}`;
+
+    renderCharts(totalAset, totalKas, totalHutang);
+  }
+
+  function renderCharts(totalAset, totalKas, totalHutang) {
+    Object.values(charts).forEach(c => c?.destroy());
+
+    const ctx1 = document.getElementById('chart-dash-finance');
+    if (ctx1) {
+      charts.dashFin = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: ['Portofolio Aset', 'Saldo Kantong Kas', 'Outstanding Hutang'],
+          datasets: [{ data: [totalAset, totalKas, totalHutang], backgroundColor: ['#0d9488', '#2563eb', '#e11d48'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    const sortedBody = [...db.body_metrics].reverse().slice(-10);
+    const bodyLabels = sortedBody.map(b => b.tanggal);
+    const bodyWeights = sortedBody.map(b => b.berat_kg);
+    const bodyFats = sortedBody.map(b => b.body_fat_pct);
+    const bodyMuscles = sortedBody.map(b => b.massa_otot_kg);
+
+    const ctx2 = document.getElementById('chart-dash-body');
+    if (ctx2) {
+      charts.dashBody = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: bodyLabels,
+          datasets: [{ label: 'Berat Badan (kg)', data: bodyWeights, borderColor: '#0d9488', tension: 0.3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    const ctx3 = document.getElementById('chart-body-progress');
+    if (ctx3) {
+      charts.bodyProg = new Chart(ctx3, {
+        type: 'line',
+        data: {
+          labels: bodyLabels,
+          datasets: [
+            { label: 'Berat (kg)', data: bodyWeights, borderColor: '#0d9488', tension: 0.3 },
+            { label: 'Otot (kg)', data: bodyMuscles, borderColor: '#2563eb', tension: 0.3 },
+            { label: 'Body Fat (%)', data: bodyFats, borderColor: '#e11d48', tension: 0.3 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    const last7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+    const ctx4 = document.getElementById('chart-calorie-7d');
+    if (ctx4) {
+      charts.cal7d = new Chart(ctx4, {
+        type: 'bar',
+        data: {
+          labels: last7.map(d => d.slice(5)),
+          datasets: [
+            { label: 'Kalori Masuk', data: last7.map(d => db.food_log.filter(f => f.tanggal === d).reduce((s, x) => s + Number(x.kalori_kkal), 0)), backgroundColor: '#0d9488' },
+            { label: 'Kalori Olahraga', data: last7.map(d => db.workout_log.filter(w => w.tanggal === d).reduce((s, x) => s + Number(x.kalori_bakar), 0)), backgroundColor: '#f59e0b' }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }
+
+  initAppMode();
+</script>
+</body>
+</html>
